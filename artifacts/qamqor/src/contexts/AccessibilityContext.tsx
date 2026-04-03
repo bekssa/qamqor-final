@@ -16,10 +16,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   });
 
   useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
     if (isHighContrast) {
-      document.body.classList.add("high-contrast");
+      html.classList.add("high-contrast");
+      body.classList.add("high-contrast");
     } else {
-      document.body.classList.remove("high-contrast");
+      html.classList.remove("high-contrast");
+      body.classList.remove("high-contrast");
     }
     localStorage.setItem("qamqor-high-contrast", String(isHighContrast));
   }, [isHighContrast]);

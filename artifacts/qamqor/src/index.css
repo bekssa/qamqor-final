@@ -138,6 +138,10 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+html.high-contrast {
+  font-size: 22px;
+}
+
 .high-contrast {
   --background: 0 0% 5%;
   --foreground: 60 100% 85%;
@@ -152,8 +156,14 @@
   --border: 60 100% 40%;
   --input: 0 0% 20%;
   --ring: 60 100% 60%;
-  font-size: 120% !important;
-  line-height: 1.8 !important;
+  line-height: 1.8;
+}
+
+@utility container {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
 }
 
 @layer base {

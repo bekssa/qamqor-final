@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <div className="min-h-[100dvh] flex flex-col">
       <Navbar />
-      <main>
+      <main className="pt-16 flex-1">
         <Hero />
         <HowItWorks />
         <FindHelpers />
