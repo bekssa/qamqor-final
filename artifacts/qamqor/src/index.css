@@ -83,11 +83,11 @@
   --card-border: 200 20% 88%;
   --primary: 192 73% 37%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 148 59% 47%;
+  --secondary: 113 52% 45%;
   --secondary-foreground: 0 0% 100%;
   --muted: 200 20% 90%;
   --muted-foreground: 215 15% 45%;
-  --accent: 148 59% 47%;
+  --accent: 113 52% 45%;
   --accent-foreground: 0 0% 100%;
   --border: 200 20% 88%;
   --input: 200 20% 85%;
@@ -103,12 +103,12 @@
   --sidebar-border: 200 20% 88%;
   --sidebar-primary: 192 73% 37%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 148 59% 47%;
+  --sidebar-accent: 113 52% 45%;
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-ring: 192 73% 37%;
   
   --chart-1: 192 73% 37%;
-  --chart-2: 148 59% 47%;
+  --chart-2: 113 52% 45%;
   --chart-3: 200 20% 50%;
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
