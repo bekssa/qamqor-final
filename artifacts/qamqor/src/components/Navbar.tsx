@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Eye, EyeOff, Globe, Menu, X, ChevronDown } from "lucide-react";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -15,6 +15,7 @@ const LOCALES: { code: Locale; label: string; flag: string }[] = [
 export default function Navbar() {
   const { isHighContrast, toggleHighContrast } = useAccessibility();
   const { locale, setLocale, t } = useLanguage();
+  const [, navigate] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
@@ -134,13 +135,14 @@ export default function Navbar() {
             </Button>
 
             <div className="hidden sm:flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="font-medium" aria-label={t("nav.login")}>
+              <Button variant="ghost" size="sm" className="font-medium" aria-label={t("nav.login")} onClick={() => navigate("/auth?tab=login")}>
                 {t("nav.login")}
               </Button>
               <Button
                 size="sm"
                 className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium"
                 aria-label={t("nav.register")}
+                onClick={() => navigate("/auth?tab=register")}
               >
                 {t("nav.register")}
               </Button>
@@ -220,12 +222,12 @@ export default function Navbar() {
                 {isHighContrast ? t("nav.accessibilityOff") : t("nav.accessibilityOn")}
               </button>
 
-              <Button variant="ghost" className="w-full justify-start font-medium" onClick={() => setMobileOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start font-medium" onClick={() => { setMobileOpen(false); navigate("/auth?tab=login"); }}>
                 {t("nav.login")}
               </Button>
               <Button
                 className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium"
-                onClick={() => setMobileOpen(false)}
+                onClick={() => { setMobileOpen(false); navigate("/auth?tab=register"); }}
               >
                 {t("nav.register")}
               </Button>
