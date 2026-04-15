@@ -54,8 +54,8 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-500" />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "#e8f7eb" }}>
+            <CheckCircle className="w-10 h-10" style={{ color: "#2C9C42" }} />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">{t("auth.passwordChanged")}</h2>
           <p className="text-gray-500 text-sm">{t("auth.tabLogin")}...</p>

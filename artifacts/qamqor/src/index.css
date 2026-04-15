@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -83,11 +83,11 @@
   --card-border: 200 20% 88%;
   --primary: 192 73% 37%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 113 52% 45%;
+  --secondary: 132 56% 39%;
   --secondary-foreground: 0 0% 100%;
   --muted: 200 20% 90%;
   --muted-foreground: 215 15% 45%;
-  --accent: 113 52% 45%;
+  --accent: 132 56% 39%;
   --accent-foreground: 0 0% 100%;
   --border: 200 20% 88%;
   --input: 200 20% 85%;
@@ -113,7 +113,7 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
 
-  --app-font-sans: 'Inter', sans-serif;
+  --app-font-sans: 'Montserrat', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --radius: 0.75rem;
@@ -169,9 +169,11 @@ html.high-contrast {
 @layer base {
   * {
     @apply border-border;
+    font-family: 'Montserrat', sans-serif;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply antialiased bg-background text-foreground;
+    font-family: 'Montserrat', sans-serif;
   }
 }
