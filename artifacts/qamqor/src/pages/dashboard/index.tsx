@@ -24,6 +24,7 @@ import imgHomeWork from "@/assets/services/homework.png";
 import imgShopping from "@/assets/services/shopping.png";
 
 const GREEN = "#2C9C42";
+const BLUE = "#3B82F6";
 
 type NavKey = "dashboard" | "messages" | "requests" | "statistics" | "support";
 type TabKey = "create" | "search" | "notifications" | "settings";
@@ -90,9 +91,7 @@ function loadRequests(userId: number): ServiceRequest[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY(userId));
     if (saved) return JSON.parse(saved);
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
   localStorage.setItem(STORAGE_KEY(userId), JSON.stringify(SEED_REQUESTS));
   return SEED_REQUESTS;
 }
@@ -134,22 +133,20 @@ function LanguageSwitcher() {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
       >
-        <Globe className="w-4 h-4 text-gray-500" />
+        <Globe className="w-3.5 h-3.5 text-gray-400" />
         {locale.toUpperCase()}
         <ChevronDown className="w-3 h-3 text-gray-400" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden min-w-[80px]">
+        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden min-w-[72px]">
           {locales.map((l) => (
             <button
               key={l}
               onClick={() => { setLocale(localeMap[l]); setOpen(false); }}
-              className={`block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${
-                locale === localeMap[l] ? "font-semibold" : "text-gray-700"
-              }`}
-              style={locale === localeMap[l] ? { color: GREEN } : {}}
+              className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+              style={locale === localeMap[l] ? { color: BLUE, fontWeight: 600 } : { color: "#374151" }}
             >
               {l}
             </button>
@@ -166,12 +163,12 @@ function AccessibilityToggle() {
   return (
     <button
       onClick={toggleHighContrast}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors"
       style={isHighContrast
-        ? { borderColor: "#2C9C42", background: "#f0faf2", color: "#2C9C42" }
+        ? { borderColor: GREEN, background: "#f0faf2", color: GREEN }
         : { borderColor: "#e5e7eb", background: "white", color: "#374151" }}
     >
-      <Eye className="w-4 h-4" />
+      <Eye className="w-3.5 h-3.5" />
       {isHighContrast ? t("dashboard.accessibilityOff") : t("dashboard.accessibilityOn")}
     </button>
   );
@@ -185,25 +182,25 @@ function UserCard({ user }: {
   const roleLabel = user.role === "seek-help" ? t("dashboard.roleSeekHelp") : t("dashboard.roleOfferHelp");
 
   return (
-    <div className="p-4 pb-0">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center gap-3 p-4 pb-3">
+    <div className="px-3 pt-4 pb-2">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="flex items-center gap-2.5 px-3 py-3">
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-base shrink-0"
             style={{ background: "linear-gradient(135deg, #5bb8f5 0%, #3b82f6 100%)" }}
           >
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-gray-900 text-base leading-tight truncate">
+            <p className="font-bold text-gray-900 text-sm leading-tight truncate">
               {user.lastName} {user.firstName}
             </p>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 mx-4" />
+        <div className="border-t border-gray-100 mx-3" />
 
-        <div className="px-4 py-3 space-y-2.5">
+        <div className="px-3 py-2.5 space-y-1.5">
           {[
             { label: t("dashboard.userRole"), value: roleLabel },
             { label: t("dashboard.userEmail"), value: user.email },
@@ -211,8 +208,8 @@ function UserCard({ user }: {
             { label: t("dashboard.userDob"), value: "—" },
           ].map(({ label, value }) => (
             <div key={label} className="flex items-start justify-between gap-2">
-              <span className="text-xs text-gray-400 shrink-0">{label}</span>
-              <span className="text-xs text-gray-800 font-medium text-right break-all">{value}</span>
+              <span className="text-[10px] text-gray-400 shrink-0 leading-tight">{label}</span>
+              <span className="text-[10px] text-gray-800 font-medium text-right break-all leading-tight">{value}</span>
             </div>
           ))}
         </div>
@@ -236,61 +233,52 @@ function Sidebar({
 
   const navItems: { key: NavKey; Icon: React.ElementType; label: string }[] = [
     { key: "dashboard", Icon: LayoutDashboard, label: t("dashboard.navDashboard") },
-    { key: "messages", Icon: MessageSquare, label: t("dashboard.navMessages") },
-    { key: "requests", Icon: ClipboardList, label: t("dashboard.navMyRequests") },
-    { key: "statistics", Icon: BarChart2, label: t("dashboard.navStatistics") },
-    { key: "support", Icon: Headphones, label: t("dashboard.navSupport") },
+    { key: "messages",  Icon: MessageSquare,  label: t("dashboard.navMessages") },
+    { key: "requests",  Icon: ClipboardList,  label: t("dashboard.navMyRequests") },
+    { key: "statistics",Icon: BarChart2,      label: t("dashboard.navStatistics") },
+    { key: "support",   Icon: Headphones,     label: t("dashboard.navSupport") },
   ];
 
   const handleLogout = () => { logout(); navigate("/"); };
 
   return (
-    <aside className="w-64 min-h-screen bg-gray-50 flex flex-col shrink-0 border-r border-gray-100">
-      <div className="pt-4 pb-2">
-        <UserCard user={user} />
-      </div>
+    <aside className="w-56 min-h-screen bg-gray-50 flex flex-col shrink-0 border-r border-gray-100">
+      <UserCard user={user} />
 
-      <nav className="flex-1 px-4 py-3 flex flex-col gap-2">
+      <nav className="flex-1 px-3 py-1 flex flex-col gap-1">
         {navItems.map(({ key, Icon, label }) => {
           const isActive = activeNav === key;
           return (
             <button
               key={key}
               onClick={() => setActiveNav(key)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all text-left border"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left border"
               style={isActive
-                ? { background: "#3B82F6", color: "white", borderColor: "#3B82F6" }
+                ? { background: BLUE, color: "white", borderColor: BLUE }
                 : { background: "white", color: "#374151", borderColor: "#e5e7eb" }}
             >
               <Icon
-                className="w-4 h-4 shrink-0"
+                className="w-3.5 h-3.5 shrink-0"
                 style={isActive ? { color: "white" } : { color: "#9ca3af" }}
               />
               <span className="flex-1 leading-tight">{label}</span>
               <ChevronRight
-                className="w-4 h-4 shrink-0"
-                style={isActive ? { color: "rgba(255,255,255,0.7)" } : { color: "#d1d5db" }}
+                className="w-3 h-3 shrink-0"
+                style={isActive ? { color: "rgba(255,255,255,0.65)" } : { color: "#d1d5db" }}
               />
             </button>
           );
         })}
-      </nav>
 
-      <div className="px-4 pb-6">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all text-left border border-red-100 bg-white hover:bg-red-50"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all text-left border border-transparent hover:bg-red-50"
           style={{ color: "#EF4444" }}
         >
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: "#fef2f2" }}
-          >
-            <LogOut className="w-3.5 h-3.5" style={{ color: "#EF4444" }} />
-          </div>
-          {t("dashboard.navLogout")}
+          <LogOut className="w-3.5 h-3.5 shrink-0" style={{ color: "#EF4444" }} />
+          <span className="flex-1 leading-tight">{t("dashboard.navLogout")}</span>
         </button>
-      </div>
+      </nav>
     </aside>
   );
 }
@@ -313,20 +301,20 @@ function ServiceCard({
 }) {
   return (
     <div
-      className="flex flex-col items-center p-5 bg-white rounded-2xl cursor-pointer transition-all flex-1 min-w-[180px]"
+      className="flex flex-col items-center p-4 bg-white rounded-2xl cursor-pointer transition-all flex-1 min-w-[160px]"
       style={selected
-        ? { outline: "2.5px solid #2C9C42", boxShadow: "0 4px 20px rgba(44,156,66,0.15)" }
+        ? { outline: "2.5px solid #2563EB", boxShadow: "0 0 0 4px rgba(37,99,235,0.12)" }
         : { border: "1.5px solid #f0f0f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
       onClick={onSelect}
     >
-      <div className="w-full h-32 flex items-center justify-center mb-4">
+      <div className="w-full h-28 flex items-center justify-center mb-3">
         <img src={img} alt={title} className="max-h-full max-w-full object-contain" />
       </div>
-      <p className="text-sm font-bold text-gray-800 text-center leading-tight mb-1.5">{title}</p>
-      <p className="text-xs text-gray-400 text-center leading-tight flex-1 mb-4">{desc}</p>
+      <p className="text-xs font-bold text-gray-800 text-center leading-tight mb-1">{title}</p>
+      <p className="text-[10px] text-gray-400 text-center leading-tight flex-1 mb-3">{desc}</p>
       <button
         onClick={(e) => { e.stopPropagation(); onSelect(); }}
-        className="px-7 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 mt-auto"
+        className="px-5 py-1.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90 mt-auto"
         style={{ background: GREEN }}
       >
         {selectLabel}
@@ -401,11 +389,11 @@ function CreateRequestTab({ userId }: { userId: number }) {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">{t("dashboard.createTitle")}</h2>
+    <div className="space-y-4">
+      <h2 className="text-base font-bold text-gray-800">{t("dashboard.createTitle")}</h2>
 
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex gap-4">
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="flex gap-3">
           {services.map((s) => (
             <ServiceCard
               key={s.key}
@@ -419,41 +407,41 @@ function CreateRequestTab({ userId }: { userId: number }) {
             />
           ))}
         </div>
-        {errors.service && <p className="text-xs text-red-500 mt-2">{errors.service}</p>}
+        {errors.service && <p className="text-[10px] text-red-500 mt-2">{errors.service}</p>}
       </div>
 
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-700">{t("dashboard.descLabel")}</label>
+          <label className="text-xs font-semibold text-gray-700">{t("dashboard.descLabel")}</label>
           <textarea
             value={description}
             onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors((er) => ({ ...er, description: "" })); }}
             placeholder={t("dashboard.descPlaceholder")}
             rows={3}
-            className={`w-full px-4 py-3 rounded-xl border text-sm outline-none resize-none transition-all ${
-              errors.description ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-500"
+            className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none resize-none transition-all ${
+              errors.description ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-400"
             }`}
           />
-          {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
+          {errors.description && <p className="text-[10px] text-red-500">{errors.description}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold text-gray-700">{t("dashboard.priceLabel")}</label>
+            <label className="text-xs font-semibold text-gray-700">{t("dashboard.priceLabel")}</label>
             <input
               type="text"
               inputMode="numeric"
               value={price}
               onChange={(e) => handlePriceChange(e.target.value)}
               placeholder={t("dashboard.pricePlaceholder")}
-              className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                errors.price ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-500"
+              className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none transition-all ${
+                errors.price ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-400"
               }`}
             />
-            {errors.price && <p className="text-xs text-red-500">{errors.price}</p>}
+            {errors.price && <p className="text-[10px] text-red-500">{errors.price}</p>}
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold text-gray-700">{t("dashboard.dateLabel")}</label>
+            <label className="text-xs font-semibold text-gray-700">{t("dashboard.dateLabel")}</label>
             <input
               type="text"
               inputMode="numeric"
@@ -461,88 +449,88 @@ function CreateRequestTab({ userId }: { userId: number }) {
               onChange={(e) => handleDateChange(e.target.value)}
               placeholder={t("dashboard.datePlaceholder")}
               maxLength={10}
-              className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                errors.date ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-500"
+              className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none transition-all ${
+                errors.date ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-400"
               }`}
             />
-            {errors.date && <p className="text-xs text-red-500">{errors.date}</p>}
+            {errors.date && <p className="text-[10px] text-red-500">{errors.date}</p>}
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-700">{t("dashboard.addressLabel")}</label>
+          <label className="text-xs font-semibold text-gray-700">{t("dashboard.addressLabel")}</label>
           <input
             type="text"
             value={address}
             onChange={(e) => { setAddress(e.target.value); if (errors.address) setErrors((er) => ({ ...er, address: "" })); }}
             placeholder={t("dashboard.addressPlaceholder")}
-            className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-              errors.address ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-500"
+            className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none transition-all ${
+              errors.address ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-blue-400"
             }`}
           />
-          {errors.address && <p className="text-xs text-red-500">{errors.address}</p>}
+          {errors.address && <p className="text-[10px] text-red-500">{errors.address}</p>}
         </div>
 
         <button
           onClick={handleCreate}
-          className="px-7 py-3 text-white text-sm font-semibold rounded-xl transition-opacity hover:opacity-90 shadow-sm"
+          className="px-5 py-2 text-white text-xs font-semibold rounded-xl transition-opacity hover:opacity-90 shadow-sm flex items-center gap-1.5"
           style={{ background: GREEN }}
         >
-          {t("dashboard.createBtn")}
+          + {t("dashboard.createBtn")}
         </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800">{t("dashboard.activeRequests")}</h3>
-          <button className="text-sm font-medium flex items-center gap-0.5" style={{ color: "#3B82F6" }}>
-            {t("dashboard.showAll")} <ChevronRight className="w-3.5 h-3.5" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800 text-sm">{t("dashboard.activeRequests")}</h3>
+          <button className="text-xs font-medium flex items-center gap-0.5" style={{ color: BLUE }}>
+            {t("dashboard.showAll")} <ChevronRight className="w-3 h-3" />
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="text-gray-500 text-xs font-semibold" style={{ background: "#EFF6FF" }}>
-                <th className="px-4 py-3 text-left">{t("dashboard.colName")}</th>
-                <th className="px-4 py-3 text-left whitespace-nowrap">{t("dashboard.colDateReg")}</th>
-                <th className="px-4 py-3 text-left whitespace-nowrap">{t("dashboard.colDateExec")}</th>
-                <th className="px-4 py-3 text-left">{t("dashboard.colPrice")}</th>
-                <th className="px-4 py-3 text-left">{t("dashboard.colHelper")}</th>
-                <th className="px-4 py-3"></th>
+              <tr className="text-gray-500 font-semibold" style={{ background: "#EFF6FF" }}>
+                <th className="px-3 py-2.5 text-left">{t("dashboard.colName")}</th>
+                <th className="px-3 py-2.5 text-left whitespace-nowrap">{t("dashboard.colDateReg")}</th>
+                <th className="px-3 py-2.5 text-left whitespace-nowrap">{t("dashboard.colDateExec")}</th>
+                <th className="px-3 py-2.5 text-left">{t("dashboard.colPrice")}</th>
+                <th className="px-3 py-2.5 text-left">{t("dashboard.colHelper")}</th>
+                <th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {requests.map((req) => (
                 <tr key={req.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-50 shrink-0 border border-gray-100">
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-50 shrink-0 border border-gray-100">
                         <img
                           src={SERVICE_IMG[req.serviceKey] ?? imgHousehold}
                           alt={req.serviceLabel}
-                          className="w-full h-full object-contain p-1.5"
+                          className="w-full h-full object-contain p-1"
                         />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-800 leading-tight text-xs">{req.serviceLabel}</p>
-                        <p className="text-gray-400 text-xs leading-tight truncate max-w-[140px]">{req.description}</p>
+                        <p className="font-semibold text-gray-800 leading-tight">{req.serviceLabel}</p>
+                        <p className="text-gray-400 leading-tight truncate max-w-[120px]">{req.description}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{req.dateCreated}</td>
-                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{req.dateExecution}</td>
-                  <td className="px-4 py-3 text-gray-700 font-semibold text-xs">{req.price}</td>
-                  <td className="px-4 py-3 text-xs">
+                  <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{req.dateCreated}</td>
+                  <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{req.dateExecution}</td>
+                  <td className="px-3 py-2.5 text-gray-700 font-semibold">{req.price}</td>
+                  <td className="px-3 py-2.5">
                     {req.helper
                       ? <span className="text-gray-700">{req.helper}</span>
                       : <span className="text-gray-400 italic">{t("dashboard.helperSearching")}</span>
                     }
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     <button
-                      className="px-4 py-1.5 text-white text-xs font-semibold rounded-lg transition-opacity hover:opacity-90 whitespace-nowrap"
-                      style={{ background: "#3B82F6" }}
+                      className="px-3 py-1.5 text-white font-semibold rounded-lg transition-opacity hover:opacity-90 whitespace-nowrap"
+                      style={{ background: BLUE }}
                     >
                       {t("dashboard.editBtn")}
                     </button>
@@ -551,7 +539,7 @@ function CreateRequestTab({ userId }: { userId: number }) {
               ))}
               {requests.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">—</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">—</td>
                 </tr>
               )}
             </tbody>
@@ -566,7 +554,7 @@ function ComingSoon() {
   const { t } = useLanguage();
   return (
     <div className="flex items-center justify-center h-64">
-      <p className="text-gray-400 text-lg">{t("dashboard.comingSoon")}</p>
+      <p className="text-gray-400">{t("dashboard.comingSoon")}</p>
     </div>
   );
 }
@@ -585,16 +573,16 @@ function DashboardContent({ activeNav, userId }: { activeNav: NavKey; userId: nu
   if (activeNav !== "dashboard") return <ComingSoon />;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="flex">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="px-6 py-4 text-sm font-semibold transition-colors whitespace-nowrap border-b-2"
+              className="px-5 py-3 text-xs font-semibold transition-colors whitespace-nowrap border-b-2"
               style={activeTab === tab.key
-                ? { color: "#3B82F6", borderColor: "#3B82F6", background: "white" }
+                ? { color: BLUE, borderColor: BLUE, background: "white" }
                 : { color: "#6b7280", borderColor: "transparent" }}
             >
               {tab.label}
@@ -620,15 +608,15 @@ function DashboardPage() {
       <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} user={currentUser} />
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
-          <p className="text-sm font-bold" style={{ color: "#3B82F6" }}>{t("dashboard.title")}</p>
+        <header className="bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between shrink-0 rounded-tl-2xl shadow-sm">
+          <p className="text-sm font-bold" style={{ color: BLUE }}>{t("dashboard.title")}</p>
           <div className="flex items-center gap-2">
             <AccessibilityToggle />
             <LanguageSwitcher />
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-5 overflow-y-auto">
           <DashboardContent activeNav={activeNav} userId={currentUser.id} />
         </main>
       </div>
