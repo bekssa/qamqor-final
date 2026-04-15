@@ -4,6 +4,7 @@ import AuthPage from "@pages/auth";
 import SmsVerifyPage from "@pages/auth/verify";
 import ForgotPasswordPage from "@pages/auth/forgot";
 import ResetPasswordPage from "@pages/auth/reset";
+import DashboardPage from "@pages/dashboard";
 import NotFound from "@pages/not-found";
 
 export default function AppRouter() {
@@ -14,6 +15,7 @@ export default function AppRouter() {
       <Route path="/auth/verify" component={SmsVerifyPage} />
       <Route path="/auth/forgot" component={ForgotPasswordPage} />
       <Route path="/auth/reset" component={ResetPasswordPage} />
+      <Route path="/dashboard" component={DashboardPage} />
       <Route component={NotFound} />
     </Switch>
   );

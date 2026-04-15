@@ -85,11 +85,11 @@ export default function SmsVerifyPage() {
     }
     if (flow === "register") {
       confirmRegister();
-      navigate("/");
+      navigate("/dashboard");
     } else if (flow === "forgot") {
       navigate("/auth/reset");
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
   };
 

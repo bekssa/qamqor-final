@@ -222,7 +222,7 @@ export default function AuthPage() {
       setSubmitError(t("auth.invalidCredentials"));
       return;
     }
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const roleOptions = [
