@@ -8,6 +8,8 @@ export interface User {
   email: string;
   phone: string;
   role: string;
+  birthDate?: string;
+  city?: string;
 }
 
 export interface PendingUser {
@@ -17,6 +19,8 @@ export interface PendingUser {
   phone: string;
   role: string;
   password: string;
+  birthDate?: string;
+  city?: string;
 }
 
 export type AuthFlow = "register" | "forgot" | null;

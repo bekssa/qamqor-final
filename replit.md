@@ -83,5 +83,10 @@ Shadcn/ui components remain in `src/components/ui/` — accessible via `@shared/
 - **Auth guard**: `AuthGuard` HOC in `src/app/guards/` checks `currentUser` from AuthContext
 - **Landing buttons**: Hero ("Найти помощника", "Предложить помощь") and CTABanner ("Зарегистрироваться", "Найти помощника") redirect to `/auth` if user is not logged in
 - **Registration roles**: 2 options — "Я хочу найти помощника" (`seek-help`) / "Я хочу помочь" (`offer-help`)
-- **Mock credentials**: email `ivan@example.com` / password `password123`; SMS OTP: `1234`
+- **Mock credentials**: `ivan@example.com`/`password123` (seek-help); `aigerim@example.com`/`password123` (offer-help); SMS OTP: `1234`
 - **Accessibility**: High-contrast mode sets `html` font-size to 22px, stored in localStorage
+- **Role-based dashboard**: `seek-help` users see tabbed view with CreateRequestTab (form + active requests table); `offer-help` users see HelperDashboard (welcome banner + active requests + available requests)
+- **EditRequestModal**: Opens from "Редактировать" button on active request rows; allows editing service, description, price, date, address
+- **CompletionModal**: Opens from "Завершить" button in HelperDashboard; asks if user agreed on initial price (Yes/No); No reveals price input; submits and removes the request from active list
+- **HelperDashboard**: Shows active requests with red "Завершить" button; available requests with chat/accept/reject action buttons; filter dropdown for sorting
+- **Storage key**: `qamqor-requests-v2-${userId}` with SEED: 4 active, 4 completed, 2 cancelled

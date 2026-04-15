@@ -152,6 +152,7 @@ export default function AuthPage() {
   const [reg, setReg] = useState({
     lastName: "", firstName: "", email: "", phone: "+7",
     role: "", password: "", confirmPassword: "", agreed: false,
+    birthDate: "", city: "",
   });
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
 
@@ -206,6 +207,8 @@ export default function AuthPage() {
       phone: reg.phone,
       role: reg.role,
       password: reg.password,
+      birthDate: reg.birthDate || undefined,
+      city: reg.city || undefined,
     });
     setFlow("register");
     navigate("/auth/verify");
@@ -303,6 +306,25 @@ export default function AuthPage() {
                 onChange={(v) => setReg((p) => ({ ...p, role: v }))}
                 error={regErrors.role}
                 options={roleOptions}
+              />
+              <AuthInput
+                label={t("auth.birthDate")}
+                placeholder={t("auth.birthDatePlaceholder")}
+                value={reg.birthDate}
+                onChange={(v) => {
+                  const d = v.replace(/\D/g,"").slice(0,8);
+                  let fmt = d;
+                  if (d.length>2) fmt=`${d.slice(0,2)}.${d.slice(2)}`;
+                  if (d.length>4) fmt=`${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
+                  setReg((p) => ({ ...p, birthDate: fmt }));
+                }}
+                maxLength={10}
+              />
+              <AuthInput
+                label={t("auth.city")}
+                placeholder={t("auth.cityPlaceholder")}
+                value={reg.city}
+                onChange={(v) => setReg((p) => ({ ...p, city: v }))}
               />
               <AuthInput
                 label={`${t("auth.setPassword")} *`}
