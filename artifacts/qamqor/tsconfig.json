@@ -11,6 +11,13 @@
     "moduleResolution": "bundler",
     "types": ["node", "vite/client"],
     "paths": {
+      "@shared/ui/*": ["./src/components/ui/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@features/*": ["./src/features/*"],
+      "@widgets/*": ["./src/widgets/*"],
+      "@entities/*": ["./src/entities/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@app/*": ["./src/app/*"],
       "@/*": ["./src/*"]
     }
   },

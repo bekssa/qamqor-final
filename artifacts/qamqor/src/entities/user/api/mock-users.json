@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "lastName": "Иванов",
+    "firstName": "Иван",
+    "email": "ivan@example.com",
+    "phone": "+77001234567",
+    "role": "seek-help",
+    "password": "password123"
+  },
+  {
+    "id": 2,
+    "lastName": "Сейткалиева",
+    "firstName": "Айгерим",
+    "email": "aigerim@example.com",
+    "phone": "+77771234567",
+    "role": "offer-help",
+    "password": "password123"
+  },
+  {
+    "id": 3,
+    "lastName": "Петрова",
+    "firstName": "Светлана",
+    "email": "svetlana@example.com",
+    "phone": "+77012345678",
+    "role": "offer-help",
+    "password": "password123"
+  }
+]
