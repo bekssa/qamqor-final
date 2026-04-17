@@ -1508,6 +1508,574 @@ function MyRequestsContent({ userId }: { userId: number }) {
   );
 }
 
+/* ─────────────── find helpers tab ─────────────── */
+interface MockHelper {
+  id: number; name: string; categoryKey: string; categoryLabel: string;
+  rating: number; description: string; city: "almaty" | "astana";
+}
+
+const MOCK_HELPERS: MockHelper[] = [
+  { id:1,  name:"Умбеталиев Али",        categoryKey:"household", categoryLabel:"Бытовая помощь",    rating:4.9, city:"astana",  description:"Помогаю пожилым людям с покупками и бытовыми задачами уже 3 года" },
+  { id:2,  name:"Алишева Альмира",       categoryKey:"medical",   categoryLabel:"Медицинская помощь", rating:4.9, city:"astana",  description:"Медсестра с опытом, помогу купить лекарства, сходить к врачу" },
+  { id:3,  name:"Аймердинов Амир",       categoryKey:"homework",  categoryLabel:"Домашние работы",    rating:4.8, city:"almaty",  description:"Опыт работы 4 года, аккуратно выполню задачи по дому" },
+  { id:4,  name:"Куаныш Дастан",         categoryKey:"shopping",  categoryLabel:"Покупки",            rating:4.8, city:"astana",  description:"Помогаю пожилым людям с покупками продуктов и хозтоваров" },
+  { id:5,  name:"Аденова Асем",          categoryKey:"escort",    categoryLabel:"Сопровождение",      rating:4.8, city:"almaty",  description:"Могу сопровождать на прогулки и визиты к врачу" },
+  { id:6,  name:"Береке Мадина",         categoryKey:"household", categoryLabel:"Бытовая помощь",     rating:4.7, city:"almaty",  description:"Ответственная, аккуратная, готовлю домашнюю еду" },
+  { id:7,  name:"Салимова Алиша",        categoryKey:"medical",   categoryLabel:"Медицинская помощь", rating:4.8, city:"astana",  description:"По образованию медсестра, помогу с посещением больницы" },
+  { id:8,  name:"Бакыт Диас",            categoryKey:"household", categoryLabel:"Бытовая помощь",     rating:4.8, city:"almaty",  description:"Помогаю по дому: уборка, приготовление еды, поддержание чистоты" },
+  { id:9,  name:"Алем Асыл",             categoryKey:"escort",    categoryLabel:"Сопровождение",      rating:4.9, city:"almaty",  description:"Сопровождаю в больницу, на прогулки и по делам. Очень внимателен к деталям." },
+  { id:10, name:"Шаймердинов Бегарыс",   categoryKey:"homework",  categoryLabel:"Домашние работы",    rating:4.9, city:"astana",  description:"Опыт работы 3 года, занимаюсь ремонтом и хозяйственными делами" },
+  { id:11, name:"Аймердинов Амир",       categoryKey:"shopping",  categoryLabel:"Покупки",            rating:4.8, city:"almaty",  description:"Помогу с покупкой продуктов и лекарств, всё привезу вовремя." },
+  { id:12, name:"Айбергенова Асылай",    categoryKey:"household", categoryLabel:"Бытовая помощь",     rating:4.8, city:"almaty",  description:"Помогаю пожилым людям с покупками и хозтоваров" },
+];
+
+const AVATAR_BG = ["#3B82F6","#10B981","#F59E0B","#EF4444","#8B5CF6","#EC4899","#06B6D4","#84CC16"];
+
+function HelperAvatar({ name, size = 40, colorId }: { name: string; size?: number; colorId: number }) {
+  const bg = AVATAR_BG[colorId % AVATAR_BG.length];
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].slice(0,2).toUpperCase();
+  return (
+    <div style={{width:size,height:size,borderRadius:"50%",background:bg,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <span style={{color:"white",fontWeight:"bold",fontSize:size*0.35}}>{initials}</span>
+    </div>
+  );
+}
+
+function StarRating({ rating }: { rating: number }) {
+  const full = Math.round(rating);
+  return (
+    <span className="flex items-center gap-0.5">
+      {Array.from({length:5},(_,i)=>(
+        <svg key={i} className="w-3 h-3" viewBox="0 0 24 24" fill={i<full?"#F59E0B":"#E5E7EB"}>
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      ))}
+      <span className="text-[10px] text-gray-500 ml-0.5">{rating}</span>
+    </span>
+  );
+}
+
+function SelectRequestModal({ requests, onSelect, onClose }: {
+  requests: ServiceRequest[];
+  onSelect: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{maxHeight:"85vh"}}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <h3 className="font-bold text-gray-900 text-sm">Выберите заявку</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors text-xl font-light">✕</button>
+        </div>
+        <div className="overflow-y-auto p-4 space-y-3" style={{maxHeight:"calc(85vh - 72px)"}}>
+          {requests.map(req=>(
+            <div key={req.id} className="border border-gray-200 rounded-xl p-4">
+              <p className="font-semibold text-gray-800 text-xs mb-1">Заявка #{req.id}</p>
+              <p className="text-[11px] text-gray-500">Категория: {req.serviceLabel}</p>
+              <p className="text-[11px] text-gray-500">Адрес: {req.address.split(",")[0]}</p>
+              <p className="text-[11px] text-gray-500 mb-3">Дата: {req.dateExecution}</p>
+              <button onClick={onSelect}
+                className="w-full py-2 text-xs font-bold text-white rounded-lg transition-opacity hover:opacity-90"
+                style={{background:BLUE}}>
+                Выбрать эту заявку
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmHelperModal({ helper, onClose, onConfirm, mode = "select" }: {
+  helper: MockHelper;
+  onClose: () => void;
+  onConfirm: () => void;
+  mode?: "select" | "response";
+}) {
+  const [accepted, setAccepted] = useState(false);
+
+  if (accepted) {
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+          <div className="flex justify-end px-4 pt-4">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
+          </div>
+          <div className="px-6 pb-8 flex flex-col items-center text-center">
+            <HelperAvatar name={helper.name} size={64} colorId={helper.id}/>
+            <p className="font-bold text-gray-900 text-sm mt-3 mb-0.5">{helper.name}</p>
+            <p className="text-xs text-gray-400 mb-1">{helper.categoryLabel}</p>
+            <StarRating rating={helper.rating}/>
+            <p className="text-sm font-bold mt-4" style={{color:GREEN}}>Ваша заявка принята</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-900 text-sm">Подтвердить выбор помощника</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
+        </div>
+        <div className="p-5">
+          <div className="flex items-center gap-4 mb-4">
+            <HelperAvatar name={helper.name} size={60} colorId={helper.id}/>
+            <div>
+              <p className="font-bold text-gray-900 text-sm">{helper.name}</p>
+              <p className="text-xs text-gray-400 mb-1">{helper.categoryLabel}</p>
+              <StarRating rating={helper.rating}/>
+            </div>
+          </div>
+          {mode === "response" ? (
+            <p className="text-xs text-gray-600 mb-5">
+              <span className="font-semibold">{helper.name}</span> откликнулся на вашу заявку.{" "}
+              <span className="font-semibold">{helper.categoryLabel}:</span> {helper.description}
+            </p>
+          ) : (
+            <p className="text-xs text-gray-600 mb-5">Вы уверены, что хотите выбрать этого помощника для выполнения заявки?</p>
+          )}
+          <div className="flex gap-3">
+            <button onClick={onClose}
+              className="flex-1 py-2.5 text-xs font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+              {mode === "response" ? "Отклонить" : "Отмена"}
+            </button>
+            <button onClick={() => { if (mode === "response") { setAccepted(true); } else { onConfirm(); } }}
+              className="flex-1 py-2.5 text-xs font-bold text-white rounded-xl transition-opacity hover:opacity-90"
+              style={{background:BLUE}}>
+              Подтвердить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelperRequestForm({ helper, onBack }: { helper: MockHelper; onBack: () => void }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [comment, setComment] = useState("");
+  const [price, setPrice] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Record<string,string>>({});
+
+  const validate = () => {
+    const e: Record<string,string> = {};
+    if (!date) e.date = "Обязательное поле";
+    else if (!isValidDate(date)) e.date = "Такой даты не существует";
+    else if (!isFutureDate(date)) e.date = "Дата не может быть в прошлом";
+    if (!time) e.time = "Обязательное поле";
+    if (!price) e.price = "Обязательное поле";
+    if (!address) e.address = "Обязательное поле";
+    return e;
+  };
+
+  if (submitted) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center py-16 px-6">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{background:"#DCFCE7"}}>
+          <svg className="w-8 h-8" fill="none" stroke={GREEN} strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <p className="font-bold text-gray-900 text-base mb-1">Заявка отправлена!</p>
+        <p className="text-xs text-gray-500 mb-6 text-center max-w-xs">
+          Мы уведомим вас, когда <span className="font-semibold">{helper.name}</span> ответит на вашу заявку.
+        </p>
+        <button onClick={onBack}
+          className="px-6 py-2.5 text-xs font-bold text-white rounded-xl transition-opacity hover:opacity-90"
+          style={{background:BLUE}}>
+          Вернуться к поиску
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl px-5 py-3 flex items-center gap-2" style={{background:"#F0FDF4",border:"1px solid #BBF7D0"}}>
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke={GREEN} strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <p className="text-xs font-semibold" style={{color:GREEN}}>
+          <span className="font-bold">{helper.name}</span> выбран для выполнения заявки
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="flex items-center gap-4 mb-3">
+          <HelperAvatar name={helper.name} size={56} colorId={helper.id}/>
+          <div>
+            <p className="font-bold text-gray-900 text-sm">{helper.name}</p>
+            <p className="text-xs text-gray-400 mb-1">{helper.categoryLabel}</p>
+            <StarRating rating={helper.rating}/>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">{helper.description}</p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+        <h3 className="font-bold text-gray-800 text-sm">Дата и время выполнения</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <DatePickerField
+              value={date}
+              onChange={v=>{setDate(v);if(errors.date)setErrors(er=>({...er,date:""}));}}
+              error={errors.date}
+            />
+            {errors.date && <p className="text-[10px] text-red-500">{errors.date}</p>}
+          </div>
+          <div className="flex flex-col gap-1">
+            <input type="text" value={time}
+              onChange={e=>{setTime(e.target.value);if(errors.time)setErrors(er=>({...er,time:""}));}}
+              placeholder="ЧЧ:ММ"
+              className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none transition-all ${errors.time?"border-red-400 bg-red-50":"border-gray-200 focus:border-blue-400"}`}/>
+            {errors.time && <p className="text-[10px] text-red-500">{errors.time}</p>}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-700">Написать комментарий</label>
+          <textarea value={comment} onChange={e=>setComment(e.target.value)}
+            placeholder="Опишите детали вашей заявки..."
+            rows={3}
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs outline-none resize-none focus:border-blue-400 transition-all"/>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-700">Цена</label>
+            <div className="relative">
+              <input type="text" inputMode="numeric" value={price}
+                onChange={e=>{setPrice(e.target.value.replace(/\D/g,""));if(errors.price)setErrors(er=>({...er,price:""}));}}
+                placeholder="0"
+                className={`w-full px-3 py-2.5 pr-6 rounded-xl border text-xs outline-none transition-all ${errors.price?"border-red-400 bg-red-50":"border-gray-200 focus:border-blue-400"}`}/>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">₸</span>
+            </div>
+            {errors.price && <p className="text-[10px] text-red-500">{errors.price}</p>}
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-700">Ваш адрес</label>
+            <button type="button"
+              onClick={()=>{setShowAddressPicker(true);if(errors.address)setErrors(er=>({...er,address:""}));}}
+              className={`w-full px-3 py-2.5 rounded-xl border text-xs text-left flex items-center gap-2 transition-all ${errors.address?"border-red-400 bg-red-50":address?"border-gray-200 bg-gray-50":"border-gray-200 hover:border-blue-400"}`}>
+              <svg className="w-3.5 h-3.5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              {address
+                ? <span className="truncate text-gray-800">{address.split(",").slice(0,2).join(",")}{city?<span className="text-gray-400 ml-1">({city})</span>:null}</span>
+                : <span className="text-gray-400">Выберите адрес</span>
+              }
+            </button>
+            {errors.address && <p className="text-[10px] text-red-500">{errors.address}</p>}
+          </div>
+        </div>
+
+        {showAddressPicker && (
+          <AddressPickerModal
+            onClose={()=>setShowAddressPicker(false)}
+            onSelect={(addr,c)=>{setAddress(addr);setCity(c);setShowAddressPicker(false);}}
+          />
+        )}
+
+        <button onClick={()=>{const errs=validate();setErrors(errs);if(!Object.keys(errs).length)setSubmitted(true);}}
+          className="w-full py-3 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+          style={{background:BLUE}}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg>
+          Отправить заявку
+        </button>
+        <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-1">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"/><line x1="12" y1="8" x2="12" y2="12" strokeWidth="2"/><line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="3"/></svg>
+          Мы уведомим вас, когда ответит помощник.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FindHelpersTab({ userId }: { userId: number }) {
+  const [query, setQuery] = useState("");
+  const [cityFilter, setCityFilter] = useState<"all" | "almaty" | "astana">("all");
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  const [selectedHelper, setSelectedHelper] = useState<MockHelper | null>(null);
+  const [showSelectReq, setShowSelectReq] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [view, setView] = useState<"grid" | "form">("grid");
+
+  const activeWithNoHelper = loadRequests(userId).filter(r=>(r.status??"active")==="active"&&!r.helper);
+
+  const filtered = MOCK_HELPERS.filter(h=>{
+    const q=query.toLowerCase();
+    const matchQ=!q||h.name.toLowerCase().includes(q)||h.categoryLabel.toLowerCase().includes(q)||h.description.toLowerCase().includes(q);
+    const matchC=cityFilter==="all"||h.city===cityFilter;
+    return matchQ&&matchC;
+  });
+
+  const handleSelect=(h:MockHelper)=>{
+    setSelectedHelper(h);
+    if(activeWithNoHelper.length>0) setShowSelectReq(true);
+    else setShowConfirm(true);
+  };
+
+  const cityLabel=cityFilter==="almaty"?"Алматы":cityFilter==="astana"?"Астана":"Все города";
+
+  if(view==="form"&&selectedHelper) {
+    return <HelperRequestForm helper={selectedHelper} onBack={()=>{setView("grid");setSelectedHelper(null);}}/>;
+  }
+
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <input type="text" value={query} onChange={e=>setQuery(e.target.value)}
+                placeholder="Поиск услуг"
+                className="w-full px-4 py-2.5 pr-11 rounded-xl border border-gray-200 text-xs outline-none focus:border-blue-400 transition-all"/>
+              <div className="absolute right-0 top-0 bottom-0 w-10 flex items-center justify-center rounded-r-xl" style={{background:BLUE}}>
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+            </div>
+            <div className="relative shrink-0">
+              <div className="text-right">
+                <p className="text-[10px] text-gray-400 leading-tight">Мой город:</p>
+                <button onClick={()=>setCityPickerOpen(v=>!v)}
+                  className="text-xs font-bold transition-opacity hover:opacity-75"
+                  style={{color:BLUE}}>
+                  {cityLabel}
+                </button>
+              </div>
+              {cityPickerOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[130px] overflow-hidden">
+                  {([ ["all","Все города"],["almaty","Алматы"],["astana","Астана"] ] as const).map(([key,label])=>(
+                    <button key={key} onClick={()=>{setCityFilter(key);setCityPickerOpen(false);}}
+                      className="block w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors"
+                      style={{color:cityFilter===key?BLUE:"#374151",fontWeight:cityFilter===key?"700":"400"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {filtered.length===0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+            <p className="text-gray-400 text-sm">По вашему запросу ничего не найдено</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map(h=>(
+              <div key={h.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col">
+                <div className="flex items-start gap-3 mb-2">
+                  <HelperAvatar name={h.name} size={44} colorId={h.id}/>
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900 text-xs leading-tight">{h.name}</p>
+                    <p className="text-[10px] text-gray-400 leading-tight mb-1">{h.categoryLabel}</p>
+                    <StarRating rating={h.rating}/>
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-500 leading-snug line-clamp-3 flex-1 mb-3">{h.description}</p>
+                <div className="flex justify-end">
+                  <button onClick={()=>handleSelect(h)}
+                    className="px-4 py-1.5 text-white text-xs font-bold rounded-lg transition-opacity hover:opacity-90"
+                    style={{background:BLUE}}>
+                    Выбрать
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showSelectReq&&selectedHelper&&(
+        <SelectRequestModal
+          requests={activeWithNoHelper}
+          onSelect={()=>{setShowSelectReq(false);setShowConfirm(true);}}
+          onClose={()=>{setShowSelectReq(false);setSelectedHelper(null);}}
+        />
+      )}
+      {showConfirm&&selectedHelper&&(
+        <ConfirmHelperModal
+          helper={selectedHelper}
+          onClose={()=>{setShowConfirm(false);setSelectedHelper(null);}}
+          onConfirm={()=>{setShowConfirm(false);setView("form");}}
+        />
+      )}
+    </>
+  );
+}
+
+/* ─────────────── notifications tab ─────────────── */
+interface NotifItem {
+  id: number;
+  type: "accepted" | "new_response" | "reminder" | "rejected" | "message";
+  time: string;
+  helperName?: string;
+  service?: string;
+  reason?: string;
+  category?: string;
+  rating?: number;
+  preview?: string;
+  date?: string;
+}
+
+const NOTIFS_TODAY: NotifItem[] = [
+  { id:1, type:"accepted",     helperName:"Аймердинов Амир",    service:"Покупка",         time:"12:45" },
+  { id:2, type:"new_response", helperName:"Айбергенова Асылай", category:"Бытовая помощь", rating:4.8,  time:"11:05" },
+  { id:3, type:"reminder",     preview:"Сегодня в 16:00 уборка квартиры.",                 time:"" },
+];
+const NOTIFS_YESTERDAY: NotifItem[] = [
+  { id:4, type:"rejected",  helperName:"Береке Мадина",  service:"Покупка лекарств", reason:"По личным причинам", time:"18:05" },
+  { id:5, type:"accepted",  helperName:"Куаныш Дастан",  service:"Бытовая помощь",                                time:"18:05" },
+];
+const NOTIFS_EARLIER: NotifItem[] = [
+  { id:6, type:"message", helperName:"Бакыт Диас", preview:"Я уже купил всё необходимое", date:"28 марта", time:"10:20" },
+];
+
+function NotifCard({ n, onView }: { n: NotifItem; onView?: () => void }) {
+  const h = n.helperName ? MOCK_HELPERS.find(x=>x.name===n.helperName) : undefined;
+  const colorId = h?.id ?? 0;
+
+  if(n.type==="accepted") return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"#DCFCE7"}}>
+        <svg className="w-4 h-4" fill="none" stroke={GREEN} strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-gray-900">{n.helperName} принял вашу заявку</p>
+        <p className="text-[10px] text-gray-400">Заявка: {n.service}</p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {n.time&&<span className="text-[10px] text-gray-400">{n.time}</span>}
+        <button className="px-3 py-1 text-[10px] font-semibold rounded-lg whitespace-nowrap"
+          style={{color:BLUE,border:"1px solid #BFDBFE"}}>
+          Открыть заявку
+        </button>
+      </div>
+    </div>
+  );
+
+  if(n.type==="new_response") return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"#FEF9C3"}}>
+        <svg className="w-4 h-4" fill="none" stroke="#EAB308" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-gray-900 mb-2">Новый отклик на заявку</p>
+        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+          {n.helperName&&<HelperAvatar name={n.helperName} size={32} colorId={colorId}/>}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-800 leading-tight">{n.helperName}</p>
+            <p className="text-[10px] text-gray-400 leading-tight">{n.category}</p>
+            <StarRating rating={n.rating??4.8}/>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+        {n.time&&<span className="text-[10px] text-gray-400">{n.time}</span>}
+        {onView&&<button onClick={onView} className="px-3 py-1 text-[10px] font-semibold rounded-lg whitespace-nowrap border border-gray-200 hover:bg-gray-50 transition-colors text-gray-700">Посмотреть</button>}
+      </div>
+    </div>
+  );
+
+  if(n.type==="reminder") return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"#FEF9C3"}}>
+        <svg className="w-4 h-4" fill="none" stroke="#EAB308" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-semibold text-gray-900">Напоминание: </span>
+        <span className="text-xs text-gray-500">{n.preview}</span>
+      </div>
+    </div>
+  );
+
+  if(n.type==="rejected") return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"#FEE2E2"}}>
+        <svg className="w-4 h-4" fill="none" stroke="#EF4444" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-gray-900">{n.helperName} отклонила вашу заявку</p>
+        <p className="text-[10px] text-gray-400">Заявка: {n.service}</p>
+        {n.reason&&<p className="text-[10px] text-gray-400">Причина: {n.reason}</p>}
+      </div>
+      <span className="text-[10px] text-gray-400 shrink-0">{n.time}</span>
+    </div>
+  );
+
+  if(n.type==="message") return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"#FED7AA"}}>
+        <svg className="w-4 h-4" fill="none" stroke="#F97316" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-gray-900">Новое сообщение от {n.helperName}</p>
+        <p className="text-[10px] text-gray-400 italic">"{n.preview}"</p>
+        {n.date&&<p className="text-[10px] text-gray-300 mt-0.5">{n.date}</p>}
+      </div>
+      <span className="text-[10px] text-gray-400 shrink-0">{n.time}</span>
+    </div>
+  );
+
+  return null;
+}
+
+function NotificationsTab() {
+  const [responseHelper, setResponseHelper] = useState<MockHelper|null>(null);
+
+  const handleViewResponse=(name:string)=>{
+    const found=MOCK_HELPERS.find(h=>h.name===name);
+    if(found) setResponseHelper(found);
+  };
+
+  const renderGroup=(title:string, items:NotifItem[], twoCol=false)=>(
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-5 py-3 border-b border-gray-100">
+        <h3 className="font-bold text-sm text-gray-800">{title}</h3>
+      </div>
+      {twoCol ? (
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {items.map(n=>(
+            <div key={n.id} className="border border-gray-100 rounded-xl p-4">
+              <NotifCard n={n} onView={n.type==="new_response"&&n.helperName?()=>handleViewResponse(n.helperName!):undefined}/>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="px-5 py-4 space-y-5">
+          {items.map(n=>(
+            <NotifCard key={n.id} n={n} onView={n.type==="new_response"&&n.helperName?()=>handleViewResponse(n.helperName!):undefined}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <div className="space-y-4">
+        {renderGroup("Сегодня", NOTIFS_TODAY)}
+        {renderGroup("Вчера",  NOTIFS_YESTERDAY, true)}
+        {renderGroup("Ранее",  NOTIFS_EARLIER)}
+      </div>
+      {responseHelper&&(
+        <ConfirmHelperModal
+          helper={responseHelper}
+          onClose={()=>setResponseHelper(null)}
+          onConfirm={()=>setResponseHelper(null)}
+          mode="response"
+        />
+      )}
+    </>
+  );
+}
+
 /* ─────────────── coming soon placeholder ─────────────── */
 function ComingSoon() {
   const { t } = useLanguage();
@@ -1571,7 +2139,10 @@ function DashboardContent({ activeNav, userId, userRole, firstName, openedChatId
           ))}
         </div>
       </div>
-      {activeTab==="create" ? <CreateRequestTab userId={userId}/> : <ComingSoon/>}
+      {activeTab==="create"        && <CreateRequestTab userId={userId}/>}
+      {activeTab==="search"        && <FindHelpersTab userId={userId}/>}
+      {activeTab==="notifications" && <NotificationsTab/>}
+      {activeTab==="settings"      && <ComingSoon/>}
     </div>
   );
 }
