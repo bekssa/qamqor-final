@@ -37,6 +37,7 @@ interface AuthContextType {
   confirmRegister: () => void;
   logout: () => void;
   checkUserExists: (credential: string) => boolean;
+  updateProfile: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,6 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setFlow(null);
   };
 
+  const updateProfile = (updates: Partial<User>) => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, ...updates };
+    setCurrentUser(updated);
+    localStorage.setItem("qamqor-user", JSON.stringify(updated));
+  };
+
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem("qamqor-user");
@@ -115,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         confirmRegister,
         logout,
         checkUserExists,
+        updateProfile,
       }}
     >
       {children}

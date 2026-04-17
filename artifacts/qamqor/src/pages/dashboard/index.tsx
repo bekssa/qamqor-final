@@ -2076,6 +2076,460 @@ function NotificationsTab() {
   );
 }
 
+/* ─────────────── account settings tab ─────────────── */
+const CATEGORY_META: Record<string, {label:string; img:string}> = {
+  household: { label:"Бытовая помощь",    img:imgHousehold },
+  medical:   { label:"Медицинская помощь", img:imgMedical },
+  escort:    { label:"Сопровождение",      img:imgEscort },
+  homework:  { label:"Домашние работы",    img:imgHomeWork },
+  shopping:  { label:"Покупки",            img:imgShopping },
+};
+
+const CATEGORIES_LIST = [
+  { key:"household", label:"Бытовая помощь",    desc:"уборка, приготовление еды" },
+  { key:"medical",   label:"Медицинская помощь", desc:"покупка лекарств, сопровождение" },
+  { key:"escort",    label:"Сопровождение",      desc:"поход в больницу, прогулка" },
+  { key:"homework",  label:"Домашние работы",    desc:"починка, мелкий ремонт" },
+  { key:"shopping",  label:"Покупки",            desc:"продукты, хозяйственные товары" },
+];
+
+const REQUIRED_DOCS = [
+  "Справка из наркологического диспансера",
+  "Справка из психиатрического диспансера",
+  "Справка об отсутствии судимости",
+];
+
+function PasswordResetModal({ onClose }: { onClose: () => void }) {
+  const [oldPw, setOldPw] = useState(""); const [newPw, setNewPw] = useState(""); const [confirmPw, setConfirmPw] = useState("");
+  const [showOld, setShowOld] = useState(false); const [showNew, setShowNew] = useState(false); const [showConf, setShowConf] = useState(false);
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-semibold text-gray-900">Сбросить пароль</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
+        </div>
+        <div className="space-y-4 mb-6">
+          {[
+            { label:"Старый пароль",            val:oldPw, set:setOldPw, show:showOld, setShow:setShowOld },
+            { label:"Новый пароль",             val:newPw, set:setNewPw, show:showNew, setShow:setShowNew },
+            { label:"Подтвердите новый пароль", val:confirmPw, set:setConfirmPw, show:showConf, setShow:setShowConf },
+          ].map(({label,val,set,show,setShow}) => (
+            <div key={label}>
+              <label className="text-xs text-gray-600 mb-1 block">{label}</label>
+              <div className="relative">
+                <input type={show?"text":"password"} value={val} onChange={e=>set(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-blue-400 pr-10"/>
+                <button type="button" onClick={()=>setShow(v=>!v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Eye className="w-4 h-4"/>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-3">
+          <button className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">забыли пароль?</button>
+          <button onClick={onClose} className="flex-1 py-2.5 text-sm font-bold text-white rounded-xl hover:opacity-90 transition-opacity" style={{background:BLUE}}>подтвердить</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryPickerModal({ selected, onToggle, onClose }: {
+  selected: string[]; onToggle: (key:string)=>void; onClose: ()=>void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-8 relative">
+        <button onClick={onClose} className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
+        <h3 className="text-center font-bold text-gray-800 text-base mb-8">Выберите категорию, чтобы оказать услугу...</h3>
+        <div className="grid grid-cols-5 gap-4">
+          {CATEGORIES_LIST.map(cat=>{
+            const isSel = selected.includes(cat.key);
+            return (
+              <div key={cat.key} className="border border-gray-200 rounded-2xl p-4 flex flex-col items-center text-center gap-3">
+                <img src={CATEGORY_META[cat.key].img} className="w-20 h-20 object-contain" alt={cat.label}/>
+                <div>
+                  <p className="font-semibold text-gray-800 text-xs leading-tight">{cat.label}</p>
+                  <p className="text-[10px] text-gray-400 leading-tight mt-0.5">{cat.desc}</p>
+                </div>
+                <button onClick={()=>onToggle(cat.key)}
+                  className="w-full py-2 text-xs font-bold text-white rounded-lg transition-opacity hover:opacity-90"
+                  style={{background:isSel?"#EF4444":GREEN}}>
+                  {isSel?"Убрать":"Выбрать"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccountModal({ onConfirm, onClose }: { onConfirm:()=>void; onClose:()=>void }) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h3 className="font-bold text-gray-900 text-sm mb-2">Удалить аккаунт?</h3>
+        <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+          Вы уверены, что хотите удалить свою учётную запись? Все данные будут безвозвратно удалены и недоступны для восстановления.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 text-xs font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Отмена</button>
+          <button onClick={onConfirm} className="flex-1 py-2.5 text-xs font-bold text-white rounded-xl hover:opacity-90 transition-opacity" style={{background:"#EF4444"}}>Удалить</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UnsavedChangesModal({ onSave, onDiscard }: { onSave:()=>void; onDiscard:()=>void }) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h3 className="font-bold text-gray-900 text-sm mb-2">Несохранённые изменения</h3>
+        <p className="text-xs text-gray-500 mb-5 leading-relaxed">У вас есть несохранённые изменения в настройках аккаунта. Сохранить их перед уходом?</p>
+        <div className="flex gap-3">
+          <button onClick={onDiscard} className="flex-1 py-2.5 text-xs font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Не сохранять</button>
+          <button onClick={onSave} className="flex-1 py-2.5 text-xs font-bold text-white rounded-xl hover:opacity-90 transition-opacity" style={{background:BLUE}}>Сохранить</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocumentsView() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingIdx, setPendingIdx] = useState<number|null>(null);
+  const [docs, setDocs] = useState<Array<{type:string;date:string;size:string}|null>>([null,null,null]);
+
+  const handleUploadClick = (i:number) => { setPendingIdx(i); fileInputRef.current?.click(); };
+  const handleFileChange = (e:React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0] && pendingIdx !== null) {
+      const f = e.target.files[0];
+      const ext = f.name.split(".").pop()?.toUpperCase() ?? "PDF";
+      const kb = Math.max(1, Math.round(f.size/1024));
+      const d = new Date();
+      const date = `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
+      setDocs(prev=>{ const n=[...prev]; n[pendingIdx]={type:ext,date,size:`${kb} KB`}; return n; });
+      e.target.value="";
+      setPendingIdx(null);
+    }
+  };
+
+  const allDone = docs.every(d=>d!==null);
+
+  return (
+    <div className="space-y-4">
+      <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFileChange}/>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Название</th>
+              <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Тип</th>
+              {allDone&&<><th className="px-5 py-3.5 text-left font-semibold text-gray-600">Дата</th><th className="px-5 py-3.5 text-left font-semibold text-gray-600">Размер</th></>}
+              <th className="px-5 py-3.5 text-right font-semibold text-gray-600">Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            {REQUIRED_DOCS.map((name,i)=>(
+              <tr key={i} className="border-b border-gray-50 last:border-b-0">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4" style={{color:"#EF4444"}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                    </div>
+                    <span className="text-gray-700 font-medium">{name}</span>
+                  </div>
+                </td>
+                <td className="px-5 py-3.5 text-gray-500">{docs[i]?.type ?? "PDF"}</td>
+                {allDone&&<><td className="px-5 py-3.5 text-gray-500">{docs[i]?.date}</td><td className="px-5 py-3.5 text-gray-500">{docs[i]?.size}</td></>}
+                <td className="px-5 py-3.5 text-right">
+                  {docs[i] ? (
+                    <button className="px-4 py-1.5 text-xs font-bold text-white rounded-lg" style={{background:BLUE}}>открыть</button>
+                  ) : (
+                    <button onClick={()=>handleUploadClick(i)} className="px-4 py-1.5 text-xs font-bold text-white rounded-lg" style={{background:GREEN}}>загрузить</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!allDone&&<p className="text-right text-[10px] text-gray-400 px-5 pb-3">* Обязательно загрузить эти документы</p>}
+      </div>
+      {allDone&&(
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{background:"#EFF6FF"}}>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <p className="font-bold text-gray-800 text-sm">Безопасность</p>
+            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">Ваши документы защищены и доступны только вам и доверенным лицам. Все данные хранятся в зашифрованном виде и не передаются третьим лицам.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountSettingsTab({ onDirtyChange, settingsSaveRef }: {
+  onDirtyChange: (dirty:boolean)=>void;
+  settingsSaveRef: React.MutableRefObject<(()=>void)|null>;
+}) {
+  const { currentUser, updateProfile, logout } = useAuth();
+  if (!currentUser) return null;
+  const u = currentUser;
+
+  const [settingsView, setSettingsView] = useState<"profile"|"documents">("profile");
+  const [firstName,    setFirstName]    = useState(u.firstName);
+  const [lastName,     setLastName]     = useState(u.lastName);
+  const [email,        setEmail]        = useState(u.email);
+  const [phone,        setPhone]        = useState(u.phone);
+  const [city,         setCity]         = useState(u.city ?? "almaty");
+  const [role,         setRole]         = useState(u.role);
+  const [categories,   setCategories]   = useState<string[]>(u.role==="offer-help" ? ["shopping","household","medical"] : []);
+  const [emailEditing, setEmailEditing] = useState(false);
+  const [phoneEditing, setPhoneEditing] = useState(false);
+  const [avatarSrc,    setAvatarSrc]    = useState<string|null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [showPasswordModal,  setShowPasswordModal]  = useState(false);
+  const [showCategoryModal,  setShowCategoryModal]  = useState(false);
+  const [showDeleteModal,    setShowDeleteModal]     = useState(false);
+
+  const initRef = useRef({
+    firstName: u.firstName, lastName: u.lastName, email: u.email,
+    phone: u.phone, city: u.city ?? "almaty", role: u.role,
+    categories: (u.role==="offer-help" ? ["shopping","household","medical"] : []).join(","),
+  });
+
+  const isDirty =
+    firstName !== initRef.current.firstName ||
+    lastName  !== initRef.current.lastName  ||
+    email     !== initRef.current.email     ||
+    phone     !== initRef.current.phone     ||
+    city      !== initRef.current.city      ||
+    role      !== initRef.current.role      ||
+    (role==="offer-help" && categories.join(",") !== initRef.current.categories);
+
+  useEffect(() => { onDirtyChange(isDirty); }, [firstName,lastName,email,phone,city,role,categories]);
+
+  settingsSaveRef.current = () => {
+    updateProfile({ firstName, lastName, email, phone, city, role });
+    initRef.current = { firstName, lastName, email, phone, city, role, categories: categories.join(",") };
+    onDirtyChange(false);
+  };
+
+  const handleSave = () => { settingsSaveRef.current?.(); };
+
+  const EditPen = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2"/>
+      <path d="m18.5 2.5 2 2L10 15l-2.5.5.5-2.5L18.5 2.5z" strokeWidth="2"/>
+    </svg>
+  );
+  const CheckIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke={GREEN} viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" strokeWidth="2.5"/></svg>
+  );
+
+  if (settingsView === "documents") {
+    return (
+      <div className="space-y-4">
+        <button onClick={()=>setSettingsView("profile")}
+          className="flex items-center gap-1.5 text-xs font-semibold transition-opacity hover:opacity-75"
+          style={{color:BLUE}}>
+          <ArrowLeft className="w-4 h-4"/> Назад к профилю
+        </button>
+        <DocumentsView/>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+      <h2 className="font-bold text-gray-900 text-base pb-4 border-b border-gray-100">Мой профиль</h2>
+
+      {/* ── Avatar + role toggle ── */}
+      <div className="flex items-start gap-5">
+        <div className="shrink-0">
+          {avatarSrc
+            ? <img src={avatarSrc} className="w-20 h-20 rounded-full object-cover border border-gray-200"/>
+            : <div className="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-xl"
+                style={{background:BLUE}}>
+                {(u.firstName[0]+(u.lastName?.[0]??'')).toUpperCase()}
+              </div>
+          }
+        </div>
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center gap-3">
+            <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/gif" className="hidden"
+              onChange={e=>{ if(e.target.files?.[0]) setAvatarSrc(URL.createObjectURL(e.target.files[0])); }}/>
+            <button onClick={()=>avatarInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white rounded-xl hover:opacity-90 transition-opacity"
+              style={{background:BLUE}}>
+              + Изменить изображение
+            </button>
+            <button onClick={()=>setAvatarSrc(null)}
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+              Удалить изображение
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400">Мы поддерживаем формат PNG, JPEG и GIF размером менее 2 МБ</p>
+          <div className="flex gap-2">
+            <button onClick={()=>setRole("seek-help")}
+              className="px-4 py-1.5 text-xs font-semibold rounded-xl transition-colors"
+              style={role==="seek-help"?{background:BLUE,color:"white",border:"none"}:{background:"white",color:BLUE,border:`1px solid ${BLUE}`}}>
+              Запросить помощь
+            </button>
+            <button onClick={()=>setRole("offer-help")}
+              className="px-4 py-1.5 text-xs font-semibold rounded-xl transition-colors"
+              style={role==="offer-help"?{background:BLUE,color:"white",border:"none"}:{background:"white",color:BLUE,border:`1px solid ${BLUE}`}}>
+              Оказать помощь
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Categories (offer-help only) ── */}
+      {role==="offer-help" && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-gray-700">Категории</label>
+            <span className="text-[10px] text-gray-400">Добавить ещё...</span>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            {categories.map(key=>(
+              <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+                style={{background:BLUE}}>
+                {CATEGORY_META[key]?.label ?? key}
+                <button onClick={()=>setCategories(p=>p.filter(c=>c!==key))}
+                  className="text-white/80 hover:text-white font-bold leading-none">✕</button>
+              </div>
+            ))}
+            <button onClick={()=>setShowCategoryModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-xs text-gray-500 hover:border-blue-300 transition-colors">
+              {categories.length===0?"Добавить категорию": CATEGORIES_LIST.find(c=>!categories.includes(c.key))?.label ?? "Добавить ещё"}
+              <ChevronDown className="w-3.5 h-3.5"/>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Profile form ── */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-700 block mb-1">Имя</label>
+            <input value={firstName} onChange={e=>setFirstName(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs outline-none focus:border-blue-400 transition-all"/>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-700 block mb-1">Фамилия</label>
+            <input value={lastName} onChange={e=>setLastName(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs outline-none focus:border-blue-400 transition-all"/>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1">Город</label>
+          <div className="relative">
+            <select value={city} onChange={e=>setCity(e.target.value)}
+              className="w-full px-3 py-2.5 pr-8 rounded-xl border border-gray-200 text-xs outline-none focus:border-blue-400 transition-all appearance-none bg-white cursor-pointer">
+              <option value="almaty">Алматы</option>
+              <option value="astana">Астана</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"/>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1">Электронная почта</label>
+          <div className="relative">
+            <input type="email" value={email} readOnly={!emailEditing} onChange={e=>setEmail(e.target.value)}
+              className={`w-full px-3 py-2.5 pr-10 rounded-xl border text-xs outline-none transition-all ${emailEditing?"border-blue-400":"border-gray-200"}`}/>
+            <button type="button" onClick={()=>setEmailEditing(v=>!v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors">
+              {emailEditing ? <CheckIcon/> : <EditPen/>}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1">Номер телефона</label>
+          <div className="relative">
+            <input type="tel" value={phone} readOnly={!phoneEditing} onChange={e=>setPhone(e.target.value)}
+              className={`w-full px-3 py-2.5 pr-10 rounded-xl border text-xs outline-none transition-all ${phoneEditing?"border-blue-400":"border-gray-200"}`}/>
+            <button type="button" onClick={()=>setPhoneEditing(v=>!v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors">
+              {phoneEditing ? <CheckIcon/> : <EditPen/>}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1">Пароль</label>
+          <div className="relative">
+            <input type="password" value="••••••••••" readOnly
+              className="w-full px-3 py-2.5 pr-10 rounded-xl border border-gray-200 text-xs outline-none"/>
+            <button type="button" onClick={()=>setShowPasswordModal(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors">
+              <EditPen/>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button onClick={handleSave} disabled={!isDirty}
+            className="px-6 py-2.5 text-xs font-bold text-white rounded-xl transition-opacity"
+            style={{background:isDirty?GREEN:"#9CA3AF", cursor:isDirty?"pointer":"not-allowed", opacity:isDirty?1:0.7}}>
+            сохранить
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-100"/>
+
+      {/* ── Documents ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-gray-800 text-sm">Мои документы</h3>
+          <p className="text-[11px] text-gray-400 mt-0.5">Ваши документы защищены и доступны только вам и доверенным лицам.</p>
+        </div>
+        <button onClick={()=>setSettingsView("documents")}
+          className="px-4 py-2 text-xs font-semibold rounded-xl border hover:bg-blue-50 transition-colors"
+          style={{color:BLUE,borderColor:"#BFDBFE"}}>
+          посмотреть
+        </button>
+      </div>
+
+      <div className="border-t border-gray-100"/>
+
+      {/* ── Delete account ── */}
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <p className="font-bold text-sm" style={{color:"#EF4444"}}>Удалить мой аккаунт</p>
+          <p className="text-[11px] text-gray-400 mt-0.5 max-w-xl leading-relaxed">
+            Безвозвратно удалите учётную запись со всеми связанными данными, включая личную информацию, историю активности и документы, без возможности последующего восстановления. После удаления доступ ко всем рабочим областям, сервисам и функциям платформы будет полностью прекращён.
+          </p>
+        </div>
+        <button onClick={()=>setShowDeleteModal(true)}
+          className="px-4 py-2 text-xs font-bold text-white rounded-xl shrink-0 hover:opacity-90 transition-opacity"
+          style={{background:"#EF4444"}}>
+          удалить аккаунт
+        </button>
+      </div>
+
+      {showPasswordModal  && <PasswordResetModal onClose={()=>setShowPasswordModal(false)}/>}
+      {showCategoryModal  && <CategoryPickerModal selected={categories} onToggle={k=>setCategories(p=>p.includes(k)?p.filter(c=>c!==k):[...p,k])} onClose={()=>setShowCategoryModal(false)}/>}
+      {showDeleteModal    && <DeleteAccountModal onClose={()=>setShowDeleteModal(false)} onConfirm={()=>{logout();}}/>}
+    </div>
+  );
+}
+
 /* ─────────────── coming soon placeholder ─────────────── */
 function ComingSoon() {
   const { t } = useLanguage();
@@ -2087,16 +2541,47 @@ function ComingSoon() {
 }
 
 /* ─────────────── main content area ─────────────── */
-function DashboardContent({ activeNav, userId, userRole, firstName, openedChatId, setOpenedChatId }: {
+function DashboardContent({ activeNav, userId, userRole, firstName, openedChatId, setOpenedChatId, onSettingsDirtyChange, settingsSaveRef }: {
   activeNav: NavKey;
   userId: number;
   userRole: string;
   firstName: string;
   openedChatId: number | null;
   setOpenedChatId: (id: number | null) => void;
+  onSettingsDirtyChange: (dirty: boolean) => void;
+  settingsSaveRef: React.MutableRefObject<(()=>void)|null>;
 }) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabKey>("create");
+  const [settingsDirtyLocal, setSettingsDirtyLocal] = useState(false);
+  const [pendingTab, setPendingTab] = useState<TabKey|null>(null);
+  const [showUnsavedTab, setShowUnsavedTab] = useState(false);
+
+  const handleDirtyChange = (dirty: boolean) => {
+    setSettingsDirtyLocal(dirty);
+    onSettingsDirtyChange(dirty);
+  };
+
+  const handleTabClick = (key: TabKey) => {
+    if (settingsDirtyLocal && activeTab === "settings" && key !== "settings") {
+      setPendingTab(key);
+      setShowUnsavedTab(true);
+    } else {
+      setActiveTab(key);
+    }
+  };
+
+  const handleUnsavedSave = () => {
+    settingsSaveRef.current?.();
+    setShowUnsavedTab(false);
+    if (pendingTab) { setActiveTab(pendingTab); setPendingTab(null); }
+  };
+
+  const handleUnsavedDiscard = () => {
+    handleDirtyChange(false);
+    setShowUnsavedTab(false);
+    if (pendingTab) { setActiveTab(pendingTab); setPendingTab(null); }
+  };
 
   if (activeNav==="messages") {
     if (openedChatId !== null) {
@@ -2115,10 +2600,6 @@ function DashboardContent({ activeNav, userId, userRole, firstName, openedChatId
 
   if (activeNav!=="dashboard") return <ComingSoon/>;
 
-  if (userRole === "offer-help") {
-    return <HelperDashboard user={{ firstName }}/>;
-  }
-
   const tabs: {key:TabKey;label:string}[] = [
     {key:"create",        label:t("dashboard.tabCreate")},
     {key:"search",        label:t("dashboard.tabSearch")},
@@ -2127,23 +2608,28 @@ function DashboardContent({ activeNav, userId, userRole, firstName, openedChatId
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex">
-          {tabs.map(tab=>(
-            <button key={tab.key} onClick={()=>setActiveTab(tab.key)}
-              className="px-5 py-3 text-xs font-semibold transition-colors whitespace-nowrap border-b-2"
-              style={activeTab===tab.key?{color:BLUE,borderColor:BLUE,background:"white"}:{color:"#6b7280",borderColor:"transparent"}}>
-              {tab.label}
-            </button>
-          ))}
+    <>
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex">
+            {tabs.map(tab=>(
+              <button key={tab.key} onClick={()=>handleTabClick(tab.key)}
+                className="px-5 py-3 text-xs font-semibold transition-colors whitespace-nowrap border-b-2"
+                style={activeTab===tab.key?{color:BLUE,borderColor:BLUE,background:"white"}:{color:"#6b7280",borderColor:"transparent"}}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
+        {activeTab==="create"        && (userRole==="offer-help" ? <HelperDashboard user={{firstName}}/> : <CreateRequestTab userId={userId}/>)}
+        {activeTab==="search"        && <FindHelpersTab userId={userId}/>}
+        {activeTab==="notifications" && <NotificationsTab/>}
+        {activeTab==="settings"      && <AccountSettingsTab onDirtyChange={handleDirtyChange} settingsSaveRef={settingsSaveRef}/>}
       </div>
-      {activeTab==="create"        && <CreateRequestTab userId={userId}/>}
-      {activeTab==="search"        && <FindHelpersTab userId={userId}/>}
-      {activeTab==="notifications" && <NotificationsTab/>}
-      {activeTab==="settings"      && <ComingSoon/>}
-    </div>
+      {showUnsavedTab && (
+        <UnsavedChangesModal onSave={handleUnsavedSave} onDiscard={handleUnsavedDiscard}/>
+      )}
+    </>
   );
 }
 
@@ -2153,12 +2639,21 @@ function DashboardPage() {
   const { t } = useLanguage();
   const [activeNav, setActiveNav] = useState<NavKey>("dashboard");
   const [openedChatId, setOpenedChatId] = useState<number | null>(null);
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const [pendingNav, setPendingNav] = useState<NavKey|null>(null);
+  const [showNavUnsaved, setShowNavUnsaved] = useState(false);
+  const settingsSaveRef = useRef<(()=>void)|null>(null);
 
   if (!currentUser) return null;
 
   const handleNavChange = (key: NavKey) => {
-    setActiveNav(key);
-    setOpenedChatId(null);
+    if (settingsDirty && activeNav === "dashboard") {
+      setPendingNav(key);
+      setShowNavUnsaved(true);
+    } else {
+      setActiveNav(key);
+      setOpenedChatId(null);
+    }
   };
 
   const navTitleMap: Partial<Record<NavKey, string>> = {
@@ -2203,9 +2698,27 @@ function DashboardPage() {
             firstName={currentUser.firstName}
             openedChatId={openedChatId}
             setOpenedChatId={setOpenedChatId}
+            onSettingsDirtyChange={setSettingsDirty}
+            settingsSaveRef={settingsSaveRef}
           />
         </div>
       </div>
+
+      {showNavUnsaved && (
+        <UnsavedChangesModal
+          onSave={()=>{
+            settingsSaveRef.current?.();
+            setSettingsDirty(false);
+            setShowNavUnsaved(false);
+            if (pendingNav) { setActiveNav(pendingNav); setOpenedChatId(null); setPendingNav(null); }
+          }}
+          onDiscard={()=>{
+            setSettingsDirty(false);
+            setShowNavUnsaved(false);
+            if (pendingNav) { setActiveNav(pendingNav); setOpenedChatId(null); setPendingNav(null); }
+          }}
+        />
+      )}
     </div>
   );
 }
