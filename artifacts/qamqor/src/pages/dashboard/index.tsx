@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -48,6 +50,7 @@ interface ServiceRequest {
   dateCreated: string;
   dateExecution: string;
   address: string;
+  city?: string;
   helper: string;
   status?: RequestStatus;
 }
@@ -336,6 +339,204 @@ function ServiceCard({ img,title,desc,selected,onSelect,selectLabel,serviceKey: 
   );
 }
 
+/* ─────────────── address picker modal ─────────────── */
+const KZ_CITIES = {
+  almaty: { name: "Алматы", lat: 43.2220, lng: 76.8512 },
+  astana: { name: "Астана", lat: 51.1801, lng: 71.4460 },
+} as const;
+type CityKey = keyof typeof KZ_CITIES;
+
+interface NominatimResult { display_name: string; lat: string; lon: string; }
+
+function makeMarkerIcon(color: string) {
+  return L.divIcon({
+    html: `<div style="width:18px;height:18px;background:${color};border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>`,
+    className: "",
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+}
+
+function AddressPickerModal({ onClose, onSelect }: {
+  onClose: () => void;
+  onSelect: (address: string, city: string) => void;
+}) {
+  const [step, setStep] = useState<"city" | "map">("city");
+  const [cityKey, setCityKey] = useState<CityKey | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
+  const [pickedAddress, setPickedAddress] = useState("");
+  const [loadingGeo, setLoadingGeo] = useState(false);
+  const mapDivRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
+  const placeMarker = useCallback((map: L.Map, lat: number, lng: number, address: string) => {
+    if (markerRef.current) markerRef.current.remove();
+    markerRef.current = L.marker([lat, lng], { icon: makeMarkerIcon(GREEN) }).addTo(map);
+    map.setView([lat, lng], 16, { animate: true });
+    if (mountedRef.current) { setPickedAddress(address); setSearchQuery(address); setSuggestions([]); }
+  }, []);
+
+  const reverseGeocode = useCallback(async (map: L.Map, lat: number, lng: number) => {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+        headers: { "Accept-Language": "ru" },
+      });
+      const d = await r.json();
+      if (mountedRef.current) placeMarker(map, lat, lng, d.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    } catch { if (mountedRef.current) placeMarker(map, lat, lng, `${lat.toFixed(5)}, ${lng.toFixed(5)}`); }
+  }, [placeMarker]);
+
+  useEffect(() => {
+    if (step !== "map" || !mapDivRef.current || !cityKey) return;
+    const city = KZ_CITIES[cityKey];
+    const map = L.map(mapDivRef.current, { zoomControl: true }).setView([city.lat, city.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
+      maxZoom: 19,
+    }).addTo(map);
+    mapRef.current = map;
+
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      reverseGeocode(map, e.latlng.lat, e.latlng.lng);
+    });
+
+    return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
+  }, [step, cityKey, reverseGeocode]);
+
+  const locateMe = () => {
+    if (!navigator.geolocation || !mapRef.current) return;
+    setLoadingGeo(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        if (!mountedRef.current || !mapRef.current) return;
+        setLoadingGeo(false);
+        reverseGeocode(mapRef.current, pos.coords.latitude, pos.coords.longitude);
+      },
+      () => { if (mountedRef.current) setLoadingGeo(false); },
+      { timeout: 8000 }
+    );
+  };
+
+  const handleSearch = (val: string) => {
+    setSearchQuery(val);
+    setPickedAddress("");
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!val.trim()) { setSuggestions([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const cityName = cityKey ? KZ_CITIES[cityKey].name : "";
+        const q = encodeURIComponent(`${val} ${cityName}`);
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=kz&limit=6`, {
+          headers: { "Accept-Language": "ru" },
+        });
+        const data: NominatimResult[] = await r.json();
+        if (mountedRef.current) setSuggestions(data);
+      } catch { /**/ }
+    }, 380);
+  };
+
+  const handleSuggestionClick = (s: NominatimResult) => {
+    if (!mapRef.current) return;
+    placeMarker(mapRef.current, parseFloat(s.lat), parseFloat(s.lon), s.display_name);
+  };
+
+  const shortName = (full: string) => full.split(",").slice(0, 3).join(",").trim();
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden" style={{maxHeight:"90vh"}}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-2">
+            {step === "map" && (
+              <button onClick={() => { setStep("city"); setCityKey(null); setPickedAddress(""); setSearchQuery(""); setSuggestions([]); }}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors mr-1">
+                <ArrowLeft className="w-4 h-4"/>
+              </button>
+            )}
+            <h3 className="font-bold text-gray-900 text-sm">
+              {step === "city" ? "Выберите ваш город" : `Выберите адрес — ${cityKey ? KZ_CITIES[cityKey].name : ""}`}
+            </h3>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors text-lg font-light">✕</button>
+        </div>
+
+        {step === "city" && (
+          <div className="p-6 flex flex-col gap-4">
+            <p className="text-xs text-gray-500 text-center">Выбор города нужен для подбора помощников из вашего региона</p>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              {(Object.entries(KZ_CITIES) as [CityKey, typeof KZ_CITIES[CityKey]][]).map(([key, city]) => (
+                <button key={key} onClick={() => { setCityKey(key); setStep("map"); }}
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all hover:border-blue-400 hover:bg-blue-50 border-gray-200">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl" style={{background:"#EFF6FF"}}>
+                    {key === "almaty" ? "🏔️" : "🏛️"}
+                  </div>
+                  <span className="font-bold text-gray-800 text-sm">{city.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === "map" && (
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="px-4 pt-3 pb-2 shrink-0 relative">
+              <div className="relative">
+                <input type="text" value={searchQuery} onChange={e => handleSearch(e.target.value)}
+                  placeholder="Введите адрес для поиска..."
+                  className="w-full px-4 py-2.5 pr-10 rounded-xl border border-gray-200 text-xs outline-none focus:border-blue-400 transition-all"/>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8" strokeWidth="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeWidth="2"/>
+                </svg>
+              </div>
+              {suggestions.length > 0 && (
+                <div className="absolute left-4 right-4 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 overflow-hidden max-h-[180px] overflow-y-auto">
+                  {suggestions.map((s, i) => (
+                    <button key={i} onClick={() => handleSuggestionClick(s)}
+                      className="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                      {shortName(s.display_name)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-4 pb-2 shrink-0 flex items-center gap-2">
+              <button onClick={locateMe} disabled={loadingGeo}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-60">
+                {loadingGeo
+                  ? <><span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin inline-block"/><span>Определяем...</span></>
+                  : <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" strokeWidth="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeWidth="2"/></svg><span>Моё местоположение</span></>
+                }
+              </button>
+              {pickedAddress && (
+                <span className="text-[10px] text-gray-400 truncate flex-1">{shortName(pickedAddress)}</span>
+              )}
+            </div>
+
+            <div ref={mapDivRef} className="flex-1 mx-4 mb-4 rounded-xl overflow-hidden border border-gray-200" style={{minHeight:"260px"}}/>
+
+            <div className="px-4 pb-4 shrink-0">
+              <button
+                disabled={!pickedAddress}
+                onClick={() => { if (pickedAddress && cityKey) onSelect(pickedAddress, KZ_CITIES[cityKey].name); }}
+                className="w-full py-3 text-white text-sm font-bold rounded-xl transition-opacity disabled:opacity-40"
+                style={{background:GREEN}}>
+                Выбрать этот адрес
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────── date picker field ─────────────── */
 const MONTH_NAMES_RU = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 const DOW_LABELS_RU = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
@@ -476,6 +677,8 @@ function CreateRequestTab({ userId }: { userId:number }) {
   const [price, setPrice] = useState("");
   const [date, setDate] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [errors, setErrors] = useState<Record<string,string>>({});
   const [requests, setRequests] = useState<ServiceRequest[]>(()=>loadRequests(userId));
   const [editingReq, setEditingReq] = useState<ServiceRequest | null>(null);
@@ -506,9 +709,9 @@ function CreateRequestTab({ userId }: { userId:number }) {
   const handleCreate = () => {
     const errs = validate(); setErrors(errs);
     if (Object.keys(errs).length) return;
-    const newReq: ServiceRequest = {id:Date.now(),serviceKey:selectedService,serviceLabel:sel?.title??selectedService,description,price,dateCreated:getTodayStr(),dateExecution:date,address,helper:"",status:"active"};
+    const newReq: ServiceRequest = {id:Date.now(),serviceKey:selectedService,serviceLabel:sel?.title??selectedService,description,price,dateCreated:getTodayStr(),dateExecution:date,address,city,helper:"",status:"active"};
     const updated=[newReq,...requests]; setRequests(updated); saveRequests(userId,updated);
-    setSelectedService(""); setDescription(""); setPrice(""); setDate(""); setAddress(""); setErrors({});
+    setSelectedService(""); setDescription(""); setPrice(""); setDate(""); setAddress(""); setCity(""); setErrors({});
     setShowSuccess(true);
   };
 
@@ -554,12 +757,22 @@ function CreateRequestTab({ userId }: { userId:number }) {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-gray-700">{t("dashboard.addressLabel")}</label>
-          <input type="text" value={address}
-            onChange={e=>{setAddress(e.target.value);if(errors.address)setErrors(er=>({...er,address:""}));}}
-            placeholder={t("dashboard.addressPlaceholder")}
-            className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none transition-all ${errors.address?"border-red-400 bg-red-50":"border-gray-200 focus:border-blue-400"}`}/>
+          <button type="button" onClick={() => { setShowAddressPicker(true); if(errors.address) setErrors(er=>({...er,address:""})); }}
+            className={`w-full px-3 py-2.5 rounded-xl border text-xs text-left transition-all flex items-center gap-2 ${errors.address ? "border-red-400 bg-red-50" : address ? "border-gray-200 bg-gray-50" : "border-gray-200 hover:border-blue-400"}`}>
+            <svg className="w-3.5 h-3.5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            {address
+              ? <span className="truncate text-gray-800">{address.split(",").slice(0, 3).join(", ")}{city ? <span className="text-gray-400 ml-1">({city})</span> : null}</span>
+              : <span className="text-gray-400">{t("dashboard.addressPlaceholder")}</span>
+            }
+          </button>
           {errors.address && <p className="text-[10px] text-red-500">{errors.address}</p>}
         </div>
+        {showAddressPicker && (
+          <AddressPickerModal
+            onClose={() => setShowAddressPicker(false)}
+            onSelect={(addr, c) => { setAddress(addr); setCity(c); setShowAddressPicker(false); }}
+          />
+        )}
         <button onClick={handleCreate}
           className="px-5 py-2.5 text-white text-xs font-bold rounded-xl transition-opacity hover:opacity-90 shadow-sm"
           style={{background:GREEN}}>

@@ -90,3 +90,7 @@ Shadcn/ui components remain in `src/components/ui/` — accessible via `@shared/
 - **CompletionModal**: Opens from "Завершить" button in HelperDashboard; asks if user agreed on initial price (Yes/No); No reveals price input; submits and removes the request from active list
 - **HelperDashboard**: Shows active requests with red "Завершить" button; available requests with chat/accept/reject action buttons; filter dropdown for sorting
 - **Storage key**: `qamqor-requests-v2-${userId}` with SEED: 4 active, 4 completed, 2 cancelled
+- **DatePickerField**: Calendar popup triggered on focus; past dates disabled; strict JS Date validation (non-existent dates → "Такой даты не существует"; past → "Дата не может быть в прошлом")
+- **SuccessModal**: Green checkmark modal shown after request creation; text says "Заявка создана!" + "станет доступна помощникам"
+- **AddressPickerModal**: 2-step map address picker. Step 1: city selection (Алматы 🏔️ / Астана 🏛️). Step 2: Leaflet map (OpenStreetMap tiles) centered on selected city + search input with Nominatim autocomplete suggestions + "Моё местоположение" geolocation button + click-on-map reverse geocode. Selected city saved to ServiceRequest.city field for region-based helper filtering. Leaflet v1.x installed via pnpm.
+- **ServiceRequest.city**: Optional string field storing city name (e.g. "Алматы") alongside address string
